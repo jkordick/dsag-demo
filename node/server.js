@@ -8,6 +8,7 @@ console.log('PORT:', process.env.PORT);
 
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const weatherRoutes = require('./routes/weather');
 
 const app = express();
@@ -32,9 +33,76 @@ app.get('/', (req, res) => {
     message: 'Welcome to Weather Dashboard API',
     version: '1.0.0',
     endpoints: {
+      'GET /health': 'Health check endpoint',
       'GET /api/weather/current/:city': 'Get current weather for a city',
       'GET /api/weather/forecast/:city': 'Get 5-day forecast for a city',
       'GET /api/weather/cities': 'Get weather for multiple cities'
+    }
+  });
+});
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  const startTime = Date.now();
+  const timestamp = new Date().toISOString();
+  
+  // Server is running if we can respond
+  const serverStatus = 'healthy';
+  
+  // Test OpenWeatherMap API connectivity
+  let weatherApiStatus = 'healthy';
+  let weatherApiError = null;
+  let responseTime = 0;
+  
+  try {
+    const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+    
+    if (!WEATHER_API_KEY) {
+      weatherApiStatus = 'degraded';
+      weatherApiError = 'API key not configured';
+    } else {
+      // Test with a simple weather call to London
+      const testResponse = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
+        params: {
+          q: 'London',
+          appid: WEATHER_API_KEY,
+          units: 'metric'
+        },
+        timeout: 5000 // 5 second timeout
+      });
+      
+      if (testResponse.status === 200) {
+        weatherApiStatus = 'healthy';
+      }
+    }
+  } catch (error) {
+    weatherApiStatus = 'unhealthy';
+    if (error.response) {
+      weatherApiError = `API error: ${error.response.status} ${error.response.statusText}`;
+    } else if (error.code === 'ECONNABORTED') {
+      weatherApiError = 'API timeout';
+    } else {
+      weatherApiError = 'API connection failed';
+    }
+  }
+  
+  responseTime = Date.now() - startTime;
+  
+  // Always return 200 if server is running, but include service status details
+  const overallStatus = weatherApiStatus === 'healthy' ? 'healthy' : 'degraded';
+  
+  res.status(200).json({
+    status: overallStatus,
+    timestamp: timestamp,
+    responseTime: `${responseTime}ms`,
+    services: {
+      server: {
+        status: serverStatus
+      },
+      weatherApi: {
+        status: weatherApiStatus,
+        error: weatherApiError
+      }
     }
   });
 });

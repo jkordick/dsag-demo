@@ -64,6 +64,7 @@ Returns API information and available endpoints.
   "message": "Welcome to Weather Dashboard API",
   "version": "1.0.0",
   "endpoints": {
+    "GET /health": "Health check endpoint",
     "GET /api/weather/current/:city": "Get current weather for a city",
     "GET /api/weather/forecast/:city": "Get 5-day forecast for a city",
     "GET /api/weather/cities": "Get weather for multiple cities"
@@ -71,7 +72,41 @@ Returns API information and available endpoints.
 }
 ```
 
-#### 2. Current Weather
+#### 2. Health Check
+```
+GET /health
+```
+Health check endpoint for monitoring API availability and external dependencies.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-08-26T13:10:07.163Z",
+  "responseTime": "19ms",
+  "services": {
+    "server": {
+      "status": "healthy"
+    },
+    "weatherApi": {
+      "status": "healthy",
+      "error": null
+    }
+  }
+}
+```
+
+**Status Values:**
+- `healthy`: All services are functioning normally
+- `degraded`: Server is running but external dependencies have issues
+- `unhealthy`: External service is not accessible
+
+**Example Request:**
+```bash
+curl http://localhost:3000/health
+```
+
+#### 3. Current Weather
 ```
 GET /api/weather/current/:city
 ```
@@ -111,7 +146,7 @@ curl http://localhost:3000/api/weather/current/London
 }
 ```
 
-#### 3. Weather Forecast
+#### 4. Weather Forecast
 ```
 GET /api/weather/forecast/:city
 ```
@@ -125,7 +160,7 @@ Get 5-day weather forecast for a specific city.
 curl http://localhost:3000/api/weather/forecast/Paris
 ```
 
-#### 4. Multiple Cities Weather
+#### 5. Multiple Cities Weather
 ```
 POST /api/weather/cities
 ```
