@@ -1,0 +1,9 @@
+.env
+
+.project
+
+.DS_Store
+
+/node_modules/*
+
+/ABAP/*
